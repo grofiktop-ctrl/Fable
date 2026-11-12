@@ -27,7 +27,7 @@ input.addEventListener('change',()=>{window.diaryPauseFollow();setDate();});
 follow.addEventListener('change',()=>{if(follow.checked)input.value=dateKey(new Date());setDate();});
 el('calendar-today').onclick=()=>{follow.checked=true;input.value=dateKey(new Date());setDate();};
 el('calendar-prev-week').onclick=()=>pick(shift(selected(),-7));el('calendar-next-week').onclick=()=>pick(shift(selected(),7));
-el('calendar-all').onclick=()=>{allWeek=!allWeek;window.diaryPauseFollow();if(allWeek){document.dispatchEvent(new Event('diary-calendar-all'));lastKey='';render();}else setDate();};
+
 const monthPanel=el('calendar-month-panel'),monthToggle=el('calendar-month-toggle');
 monthToggle.onclick=()=>{monthPanel.hidden=!monthPanel.hidden;monthToggle.setAttribute('aria-expanded',String(!monthPanel.hidden));if(!monthPanel.hidden)renderMonth();};
 for(const [id,delta] of [['month-prev',-1],['month-next',1]])el(id).onclick=()=>{monthView=new Date(monthView.getFullYear(),monthView.getMonth()+delta,1,12);renderMonth();};
@@ -54,7 +54,7 @@ function render(){
  el('calendar-week-range').textContent=range(monday)+' — '+range(sunday);
  const frag=document.createDocumentFragment();for(let i=0;i<7;i++)frag.appendChild(buttonDate(shift(monday,i)));el('calendar-week').replaceChildren(frag);
  const heading=dt.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});el('calendar-heading').textContent=allWeek?'Вся неделя':heading.charAt(0).toUpperCase()+heading.slice(1);
- el('calendar-all').textContent=allWeek?'Один день':'Вся неделя';
+
  const times=window.diaryBellsForDay(day),official=times.map((t,i)=>({label:(i+1)+' урок',start:t[0],end:t[1],index:i}));
  if(day==='Понедельник')official.unshift({label:'Разговоры о важном',start:'08:45',end:'09:15',index:-1});
  const actual=subjectCount===null?official:official.filter(t=>t.index<subjectCount&&(subjectCount>0));

@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 const panel=document.getElementById('permissions-panel'),allow=document.getElementById('permissions-allow'),later=document.getElementById('permissions-later'),status=document.getElementById('permissions-state'),help=document.getElementById('permissions-help');
-let state='prompt',busy=false,epoch=0,previousFocus=null,started=false;
+let state='prompt',busy=false,epoch=0,previousFocus=null,started=false,note='';
 const supported=()=>!!navigator.mediaDevices?.getUserMedia;
 async function inspect(){
  if(!supported())return state='unsupported';
@@ -13,28 +13,33 @@ function render(){
  allow.disabled=busy||state==='unsupported';
  allow.textContent=busy?'Ждём разрешения…':state==='granted'?'Проверить микрофон':'Разрешить микрофон';
  later.textContent=state==='granted'?'Готово':'Позже';
- help.textContent=state==='denied'?'Доступ заблокирован. Разреши микрофон в настройках сайта или Android → Приложения → Дневник · тест → Разрешения. Затем повтори проверку.':state==='unsupported'?'Эта оболочка не предоставляет доступ к микрофону. Дневником и перепиской можно пользоваться без него.':'Звук передаётся только во время звонка. Для дневника разрешение не нужно.';
+ help.textContent=note?note:state==='denied'?'Доступ заблокирован. Разреши микрофон в настройках сайта или Android → Приложения → Дневник · тест → Разрешения. Затем повтори проверку.':state==='unsupported'?'Эта оболочка не предоставляет доступ к микрофону. Дневником и перепиской можно пользоваться без него.':'Звук передаётся только во время звонка. Для дневника разрешение не нужно.';
 }
-async function open(force=false){await inspect();if(!force&&state==='granted')return;previousFocus=document.activeElement;panel.hidden=false;render();(allow.disabled?later:allow).focus();}
+async function open(force=false){note='';await inspect();if(!force&&state==='granted')return;previousFocus=document.activeElement;panel.hidden=false;render();(allow.disabled?later:allow).focus();}
 function close(){epoch++;busy=false;panel.hidden=true;previousFocus?.focus?.();}
 async function request(){
  if(busy||!supported())return false;
- const token=++epoch;busy=true;render();window.DiaryCalls?.unlockAudio();
- let media;
+ const token=++epoch;busy=true;note='';render();window.DiaryCalls?.unlockAudio();
+ const stop=stream=>stream?.getTracks().forEach(t=>t.stop()); // Проверка доступа никогда не оставляет запись включённой.
+ const succeed=()=>{state='granted';note='Готово. Микрофон выключен; он включится только во время звонка.';try{localStorage.setItem('diaryMicGranted','yes');}catch(_){}document.dispatchEvent(new Event('diary-mic-granted'));};
+ let timer;
  try{
-  media=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-  media.getTracks().forEach(t=>t.stop()); // Permission check is never a background recording.
+  const pending=navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  // Если системное окно так и не ответило, не держим кнопку заблокированной вечно.
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(Object.assign(new Error('timeout'),{name:'DiaryTimeout'})),20000);});
+  let media;
+  try{media=await Promise.race([pending,timeout]);}
+  catch(error){if(error.name==='DiaryTimeout')pending.then(late=>{stop(late);if(token===epoch){succeed();render();}},()=>{});throw error;}
+  stop(media);
   if(token!==epoch)return false;
-  state='granted';try{localStorage.setItem('diaryMicGranted','yes');}catch(_){}
-  status.textContent='Разрешён';help.textContent='Готово. Микрофон выключен; он включится только во время звонка.';
-  document.dispatchEvent(new Event('diary-mic-granted'));return true;
+  succeed();return true;
  }catch(error){
   if(token!==epoch)return false;
   state=['NotAllowedError','SecurityError','PermissionDeniedError'].includes(error.name)?'denied':'prompt';
   try{localStorage.removeItem('diaryMicGranted');}catch(_){}
-  render();if(state!=='denied')help.textContent=error.name==='NotFoundError'?'Микрофон не найден. Подключи его и повтори проверку.':'Не удалось открыть микрофон. Закрой другое приложение, использующее звук, и попробуй ещё раз.';
+  note=state==='denied'?'':error.name==='NotFoundError'?'Микрофон не найден. Подключи его и повтори проверку.':error.name==='DiaryTimeout'?'Системное окно не ответило. Разреши микрофон вручную: значок слева от адреса сайта или Android → Приложения → Дневник · тест → Разрешения. Затем повтори проверку.':'Не удалось открыть микрофон. Закрой другое приложение, использующее звук, и попробуй ещё раз.';
   return false;
- }finally{media?.getTracks().forEach(t=>t.stop());if(token===epoch){busy=false;render();if(state==='granted')help.textContent='Готово. Микрофон выключен; он включится только во время звонка.';}}
+ }finally{clearTimeout(timer);if(token===epoch){busy=false;render();}}
 }
 allow.onclick=request;later.onclick=()=>{try{localStorage.setItem('diaryMicLater','1');}catch(_){}close();};
 panel.addEventListener('keydown',event=>{

@@ -809,6 +809,7 @@
     .settings-tabs-bar { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 24px; }
     @media(max-width:380px) { .header-title { min-width: 0; } .header-title h2 { font-size: 21px; } .user-info { gap: 8px; } }
     @media(max-width:420px) { #calendar-month-toggle { font-size: 16px; } }
+    .teacher-inputs-grid { grid-template-columns: 1fr; }
   </style>
 </head>
 <body data-palette="classic">
@@ -905,7 +906,7 @@
         </div>
         <div class="cal-week-nav"><button type="button" id="calendar-prev-week" aria-label="Предыдущая неделя">‹</button><span id="calendar-week-range"></span><button type="button" id="calendar-next-week" aria-label="Следующая неделя">›</button></div>
         <div id="calendar-week" class="cal-week" role="group" aria-label="Дни недели"></div>
-        <div class="cal-selection"><strong id="calendar-heading">Учебный день</strong><button type="button" id="calendar-all">Вся неделя</button></div>
+        <div class="cal-selection"><strong id="calendar-heading">Учебный день</strong></div>
         <input type="date" id="diary-date" hidden aria-label="Выбранная дата">
         <div id="bell-live" class="cal-live" role="status" hidden></div>
         <details id="bell-details"><summary><span>Звонки</span><span id="calendar-bell-range" class="cal-muted"></span></summary><div id="bell-table"></div></details>
@@ -1024,7 +1025,7 @@
         <div class="header-title"><h2>Настройки</h2></div>
       </div>
 
-      <div class="version-line">Дневник <strong>1.5v14</strong><span>Android 13+</span></div><div class="settings-tabs-bar">
+      <div class="version-line">Дневник <strong>1.5v15</strong><span>Android 13+</span></div><div class="settings-tabs-bar">
         <button class="settings-tab-btn active" id="tab-btn-interface" onclick="switchSettingsSubTab('interface')">Темы и цвета</button>
         <button class="settings-tab-btn" id="tab-btn-custom" onclick="switchSettingsSubTab('custom')">Кастомизация</button>
         <button class="settings-tab-btn" id="tab-btn-calendar" onclick="switchSettingsSubTab('calendar')">Календарь</button>
@@ -2377,7 +2378,6 @@
               <div class="teacher-controls">
                 <input type="text" class="hw-input" id="txt_${hwKey}" value="${escapeHtml(currentText)}" placeholder="Текст задания...">
                 <div class="teacher-inputs-grid">
-                  <input type="date" class="hw-date" id="dt_${hwKey}" value="${escapeHtml(currentDate)}" title="Срок сдачи">
                   <select class="tag-select" id="tag_${hwKey}">
                     <option value="">Без метки</option>
                     <option value="control" ${currentTag==='control'?'selected':''}>🔥 Контрольная</option>
@@ -2557,7 +2557,7 @@
       const tagInp = document.getElementById(`tag_${key}`);
 
       const textVal = txtInp ? txtInp.value : "";
-      const dateVal = dtInp ? dtInp.value : "";
+      const dateVal = dtInp ? dtInp.value : (window.homeworkData[key]?.date || "");
       const tagVal = tagInp ? tagInp.value : "";
       
       let mediaVal = "";
