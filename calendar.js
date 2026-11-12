@@ -54,7 +54,7 @@ function render(){
  el('calendar-week-range').textContent=range(monday)+' — '+range(sunday);
  const frag=document.createDocumentFragment();for(let i=0;i<7;i++)frag.appendChild(buttonDate(shift(monday,i)));el('calendar-week').replaceChildren(frag);
  const heading=dt.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});el('calendar-heading').textContent=allWeek?'Вся неделя':heading.charAt(0).toUpperCase()+heading.slice(1);
- el('calendar-all').textContent=allWeek?'Один день':'Вся неделя';
+ el('calendar-all').hidden=allWeek; // вернуться к одному дню — нажатием на день
  const times=window.diaryBellsForDay(day),official=times.map((t,i)=>({label:(i+1)+' урок',start:t[0],end:t[1],index:i}));
  if(day==='Понедельник')official.unshift({label:'Разговоры о важном',start:'08:45',end:'09:15',index:-1});
  const actual=subjectCount===null?official:official.filter(t=>t.index<subjectCount&&(subjectCount>0));

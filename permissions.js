@@ -22,7 +22,10 @@ async function request(){
  const token=++epoch;busy=true;render();window.DiaryCalls?.unlockAudio();
  let media;
  try{
-  media=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  // Старая оболочка APK не запрашивает разрешение у Android, и запрос висит без ответа.
+  const pending=navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  pending.then(m=>{if(media!==m)m.getTracks().forEach(t=>t.stop());},()=>{});
+  media=await Promise.race([pending,new Promise((_,reject)=>setTimeout(()=>reject(Object.assign(new Error('timeout'),{name:'TimeoutError'})),15000))]);
   media.getTracks().forEach(t=>t.stop()); // Permission check is never a background recording.
   if(token!==epoch)return false;
   state='granted';try{localStorage.setItem('diaryMicGranted','yes');}catch(_){}
@@ -32,7 +35,7 @@ async function request(){
   if(token!==epoch)return false;
   state=['NotAllowedError','SecurityError','PermissionDeniedError'].includes(error.name)?'denied':'prompt';
   try{localStorage.removeItem('diaryMicGranted');}catch(_){}
-  render();if(state!=='denied')help.textContent=error.name==='NotFoundError'?'Микрофон не найден. Подключи его и повтори проверку.':'Не удалось открыть микрофон. Закрой другое приложение, использующее звук, и попробуй ещё раз.';
+  render();if(state!=='denied')help.textContent=error.name==='TimeoutError'?'Android не ответил на запрос микрофона. Обнови приложение до новой версии или разреши микрофон в Android → Приложения → Дневник → Разрешения.':error.name==='NotFoundError'?'Микрофон не найден. Подключи его и повтори проверку.':'Не удалось открыть микрофон. Закрой другое приложение, использующее звук, и попробуй ещё раз.';
   return false;
  }finally{media?.getTracks().forEach(t=>t.stop());if(token===epoch){busy=false;render();if(state==='granted')help.textContent='Готово. Микрофон выключен; он включится только во время звонка.';}}
 }

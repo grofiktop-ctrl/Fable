@@ -550,7 +550,7 @@
 
     /* Управление учителя */
     .teacher-controls { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 6px; }
-    .teacher-inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .teacher-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .teacher-inputs-row2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .hw-input { margin-bottom: 0 !important; padding: 12px 14px !important; border-radius: var(--radius-sm) !important; font-size: 15px !important; }
     .hw-date { margin-bottom: 0 !important; padding: 12px 12px !important; border-radius: var(--radius-sm) !important; font-size: 14px !important; }
@@ -766,7 +766,7 @@
     .calendar-v2 .cal-day.is-selected {background:var(--accent);color:#fff}
     .cal-day.is-selected .cal-day-label {color:inherit;opacity:.9}
     .cal-selection {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
-    #calendar-heading {font-size:14px;line-height:1.5} #calendar-all {font-size:14px;color:var(--text-secondary);flex-shrink:0;padding-right:0}
+    #calendar-heading {font-size:14px;line-height:1.5} #calendar-all {font-size:14px;color:var(--text-secondary);flex-shrink:0;padding-right:0} #calendar-all[hidden] {display:none}
     .calendar-v2 #bell-live {margin:0 0 8px;padding:10px 12px;font-size:14px;background:var(--accent-soft);line-height:1.5;border-radius:10px}
     .calendar-v2 #bell-live[hidden] {display:none}
     .calendar-v2 #bell-details summary {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;min-height:44px;font-size:14px;list-style:none}
@@ -2377,7 +2377,6 @@
               <div class="teacher-controls">
                 <input type="text" class="hw-input" id="txt_${hwKey}" value="${escapeHtml(currentText)}" placeholder="Текст задания...">
                 <div class="teacher-inputs-grid">
-                  <input type="date" class="hw-date" id="dt_${hwKey}" value="${escapeHtml(currentDate)}" title="Срок сдачи">
                   <select class="tag-select" id="tag_${hwKey}">
                     <option value="">Без метки</option>
                     <option value="control" ${currentTag==='control'?'selected':''}>🔥 Контрольная</option>
@@ -2557,7 +2556,9 @@
       const tagInp = document.getElementById(`tag_${key}`);
 
       const textVal = txtInp ? txtInp.value : "";
-      const dateVal = dtInp ? dtInp.value : "";
+      // Поля срока больше нет: прежний срок сохраняется, пока текст задания не изменён.
+      const prevHw = window.homeworkData[key];
+      const dateVal = dtInp ? dtInp.value : (prevHw && typeof prevHw === 'object' && (prevHw.text || "") === textVal ? (prevHw.date || "") : "");
       const tagVal = tagInp ? tagInp.value : "";
       
       let mediaVal = "";
